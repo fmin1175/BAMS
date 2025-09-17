@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm, watch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { Student, StudentFormData } from '@/types/student';
 
 interface StudentFormProps {

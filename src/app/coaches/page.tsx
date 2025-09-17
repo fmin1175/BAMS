@@ -7,7 +7,12 @@ import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
 // Simple debounce implementation
-const useDebounce = (callback: Function, delay: number) => {
+interface DebouncedFunction {
+  (...args: any[]): void;
+  cancel: () => void;
+}
+
+const useDebounce = (callback: Function, delay: number): DebouncedFunction => {
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout>();
 
   const debouncedCallback = useCallback((...args: any[]) => {
@@ -15,7 +20,7 @@ const useDebounce = (callback: Function, delay: number) => {
       clearTimeout(debounceTimer);
     }
     setDebounceTimer(setTimeout(() => callback(...args), delay));
-  }, [callback, delay, debounceTimer]);
+  }, [callback, delay, debounceTimer]) as DebouncedFunction;
 
   // Add cancel method to match lodash debounce API
   debouncedCallback.cancel = () => {
@@ -162,7 +167,7 @@ export default function CoachesPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {coach.email && <div>{coach.email}</div>}
-                    {coach.phone && <div>{coach.phone}</div>}
+                    {coach.contactNumber && <div>{coach.contactNumber}</div>}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <Link 

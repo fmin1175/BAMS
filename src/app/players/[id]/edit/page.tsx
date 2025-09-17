@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import PlayerForm from '@/components/PlayerForm';
-import { Player } from '@/types/player';
+import StudentForm from '@/components/StudentForm';
+import { Student } from '@/types/student';
 
 export default function EditPlayerPage() {
   const params = useParams();
-  const [player, setPlayer] = useState<Player | null>(null);
+  const [player, setPlayer] = useState<Student | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,7 +52,7 @@ export default function EditPlayerPage() {
         <p className="mt-1 max-w-2xl text-sm text-gray-500">Update the player details below.</p>
       </div>
       <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
-        <PlayerForm player={player} isEditing={true} />
+        <StudentForm student={player} isEditing={true} />
       </div>
     </div>
   );

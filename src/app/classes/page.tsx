@@ -7,7 +7,12 @@ import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
 // Simple debounce implementation
-const useDebounce = (callback: Function, delay: number) => {
+interface DebouncedFunction {
+  (...args: any[]): void;
+  cancel: () => void;
+}
+
+const useDebounce = (callback: Function, delay: number): DebouncedFunction => {
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout>();
 
   const debouncedCallback = useCallback((...args: any[]) => {
@@ -15,7 +20,7 @@ const useDebounce = (callback: Function, delay: number) => {
       clearTimeout(debounceTimer);
     }
     setDebounceTimer(setTimeout(() => callback(...args), delay));
-  }, [callback, delay, debounceTimer]);
+  }, [callback, delay, debounceTimer]) as DebouncedFunction;
 
   // Add cancel method to match lodash debounce API
   debouncedCallback.cancel = () => {
@@ -59,7 +64,7 @@ export default function ClassesPage() {
   };
 
   // Format time for display
-  const formatTime = (timeString: string) => {
+  const formatTime = (timeString: string | Date) => {
     const date = new Date(timeString);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };

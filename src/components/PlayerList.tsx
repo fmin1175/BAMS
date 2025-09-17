@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Player } from '@/types/player';
+import { Student } from '@/types/student';
 
 export default function PlayerList() {
-  const [players, setPlayers] = useState<Player[]>([]);
+  const [players, setPlayers] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
-import { Player, PlayerFormData } from '@/types/player';
+import { Student, StudentFormData } from '@/types/student';
 
 interface PlayerFormProps {
-  player?: Player;
+  player?: Student;
   isEditing?: boolean;
 }
 
@@ -15,15 +15,17 @@ export default function PlayerForm({ player, isEditing = false }: PlayerFormProp
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const { register, handleSubmit, formState: { errors } } = useForm<PlayerFormData>({
+  const { register, handleSubmit, formState: { errors } } = useForm<StudentFormData>({
     defaultValues: player ? {
       name: player.name,
-      age: player.age,
-      contact: player.contact
+      dateOfBirth: player.dateOfBirth ? new Date(player.dateOfBirth).toISOString().split('T')[0] : '',
+      guardianName: player.guardianName,
+      contactNumber: player.contactNumber,
+      medicalNotes: player.medicalNotes || ''
     } : {}
   });
 
-  const onSubmit = async (data: PlayerFormData) => {
+  const onSubmit = async (data: StudentFormData) => {
     setIsSubmitting(true);
     setError(null);
     
@@ -36,10 +38,7 @@ export default function PlayerForm({ player, isEditing = false }: PlayerFormProp
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...data,
-          age: Number(data.age)
-        }),
+        body: JSON.stringify(data),
       });
 
       if (!response.ok) {
@@ -80,38 +79,34 @@ export default function PlayerForm({ player, isEditing = false }: PlayerFormProp
       </div>
 
       <div>
-        <label htmlFor="age" className="block text-sm font-medium text-gray-700">
-          Age
+        <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700">
+          Date of Birth
         </label>
         <input
-          type="number"
-          id="age"
-          min="1"
-          max="100"
-          {...register('age', { 
-            required: 'Age is required',
-            min: { value: 1, message: 'Age must be at least 1' },
-            max: { value: 100, message: 'Age must be at most 100' }
+          type="date"
+          id="dateOfBirth"
+          {...register('dateOfBirth', { 
+            required: 'Date of birth is required'
           })}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
         />
-        {errors.age && (
-          <p className="mt-1 text-sm text-red-600">{errors.age.message}</p>
+        {errors.dateOfBirth && (
+          <p className="mt-1 text-sm text-red-600">{errors.dateOfBirth.message}</p>
         )}
       </div>
 
       <div>
-        <label htmlFor="contact" className="block text-sm font-medium text-gray-700">
-          Contact
+        <label htmlFor="contactNumber" className="block text-sm font-medium text-gray-700">
+          Contact Number
         </label>
         <input
           type="text"
-          id="contact"
-          {...register('contact', { required: 'Contact information is required' })}
+          id="contactNumber"
+          {...register('contactNumber', { required: 'Contact number is required' })}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
         />
-        {errors.contact && (
-          <p className="mt-1 text-sm text-red-600">{errors.contact.message}</p>
+        {errors.contactNumber && (
+          <p className="mt-1 text-sm text-red-600">{errors.contactNumber.message}</p>
         )}
       </div>
 

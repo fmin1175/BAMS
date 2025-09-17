@@ -27,12 +27,18 @@ export default function ClassForm({ classData, isEditing = false }: ClassFormPro
   const [error, setError] = useState<string | null>(null);
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [courts, setCourts] = useState<any[]>([]);
-  
+
+  // Format time for input field
+  function formatTimeForInput(dateString: string | Date): string {
+    const date = new Date(dateString);
+    return date.toTimeString().substring(0, 5); // Returns HH:MM format
+  }
+
   const { register, handleSubmit, formState: { errors }, watch } = useForm<ClassFormData>({
     defaultValues: classData ? {
       name: classData.name,
-      coachId: String(classData.coachId),
-      courtId: String(classData.courtId),
+      coachId: classData.coachId,
+      courtId: classData.courtId,
       dayOfWeek: classData.dayOfWeek,
       startTime: formatTimeForInput(classData.startTime),
       endTime: formatTimeForInput(classData.endTime),
@@ -41,12 +47,6 @@ export default function ClassForm({ classData, isEditing = false }: ClassFormPro
       isRecurring: true
     }
   });
-
-  // Format time for input field
-  function formatTimeForInput(dateString: string | Date): string {
-    const date = new Date(dateString);
-    return date.toTimeString().substring(0, 5); // Returns HH:MM format
-  }
 
   // Fetch coaches and courts on component mount
   useEffect(() => {

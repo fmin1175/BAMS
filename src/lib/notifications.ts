@@ -268,9 +268,9 @@ export async function processAttendanceNotifications(sessionId: number) {
       const session = attendance.session;
       
       const notificationData: NotificationData = {
-        studentName: `${student.firstName} ${student.lastName}`,
-        parentEmail: student.parentEmail,
-        parentPhone: student.parentPhone,
+        studentName: student.name,
+        parentEmail: student.guardianName, // Using guardianName as parent contact
+        parentPhone: student.contactNumber,
         className: session.class.name,
         date: session.date.toISOString(),
         status: attendance.status as 'ABSENT',
