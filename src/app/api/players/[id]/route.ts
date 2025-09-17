@@ -12,7 +12,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       );
     }
 
-    const player = await prisma.player.findUnique({
+    const player = await prisma.student.findUnique({
       where: { id },
     });
 
@@ -47,16 +47,16 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const body = await request.json();
     
     // Validate required fields
-    const { name, age, contact } = body;
-    if (!name || !age || !contact) {
+    const { name, dateOfBirth, guardianName, contactNumber, medicalNotes } = body;
+    if (!name || !dateOfBirth || !guardianName || !contactNumber) {
       return NextResponse.json(
-        { error: 'Name, age, and contact are required' },
+        { error: 'Name, date of birth, guardian name, and contact number are required' },
         { status: 400 }
       );
     }
 
     // Check if player exists
-    const existingPlayer = await prisma.player.findUnique({
+    const existingPlayer = await prisma.student.findUnique({
       where: { id },
     });
 
@@ -67,12 +67,14 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       );
     }
 
-    const updatedPlayer = await prisma.player.update({
+    const updatedPlayer = await prisma.student.update({
       where: { id },
       data: {
         name,
-        age,
-        contact,
+        dateOfBirth: new Date(dateOfBirth),
+        guardianName,
+        contactNumber,
+        medicalNotes: medicalNotes || null,
       },
     });
 
@@ -98,7 +100,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     }
 
     // Check if player exists
-    const existingPlayer = await prisma.player.findUnique({
+    const existingPlayer = await prisma.student.findUnique({
       where: { id },
     });
 
@@ -109,7 +111,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       );
     }
 
-    await prisma.player.delete({
+    await prisma.student.delete({
       where: { id },
     });
 

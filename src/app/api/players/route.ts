@@ -4,7 +4,7 @@ import prisma from '@/lib/prisma';
 // GET /api/players - Get all players
 export async function GET() {
   try {
-    const players = await prisma.player.findMany({
+    const players = await prisma.student.findMany({
       orderBy: {
         name: 'asc',
       },
@@ -25,19 +25,25 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Validate required fields
-    const { name, age, contact } = body;
-    if (!name || !age || !contact) {
+    const { name, dateOfBirth, guardianName, contactNumber, medicalNotes } = body;
+    if (!name || !dateOfBirth || !guardianName || !contactNumber) {
       return NextResponse.json(
-        { error: 'Name, age, and contact are required' },
+        { error: 'Name, date of birth, guardian name, and contact number are required' },
         { status: 400 }
       );
     }
 
-    const player = await prisma.player.create({
+    // Use academyId = 1 as default (in a real app, get this from the authenticated user's session)
+    const academyId = 1;
+
+    const player = await prisma.student.create({
       data: {
         name,
-        age,
-        contact,
+        dateOfBirth: new Date(dateOfBirth),
+        guardianName,
+        contactNumber,
+        medicalNotes: medicalNotes || null,
+        academyId,
       },
     });
 
