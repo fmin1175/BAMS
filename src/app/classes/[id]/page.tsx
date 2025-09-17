@@ -37,8 +37,8 @@ export default function ClassDetailPage({ params }: { params: { id: string } }) 
   }, [params.id]);
 
   // Format time for display
-  const formatTime = (timeString: string) => {
-    const date = new Date(timeString);
+  const formatTime = (time: string | Date) => {
+    const date = new Date(time);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
