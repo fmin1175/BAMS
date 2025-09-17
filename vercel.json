@@ -9,6 +9,8 @@
     }
   },
   "env": {
-    "DATABASE_URL": "@database_url"
+    "DATABASE_URL": "$DATABASE_URL",
+    "NEXTAUTH_SECRET": "$NEXTAUTH_SECRET",
+    "NEXTAUTH_URL": "$NEXTAUTH_URL"
   }
 }
