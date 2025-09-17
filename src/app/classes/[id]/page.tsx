@@ -165,9 +165,13 @@ export default function ClassDetailPage({ params }: { params: { id: string } }) 
             <ul className="divide-y divide-gray-200">
               {classData.students.map((enrollment) => (
                 <li key={enrollment.id} className="px-4 py-4 sm:px-6">
-                  <Link href={`/students/${enrollment.student.id}`} className="text-blue-600 hover:underline">
-                    {enrollment.student.name}
-                  </Link>
+                  {enrollment.student ? (
+                    <Link href={`/students/${enrollment.student.id}`} className="text-blue-600 hover:underline">
+                      {enrollment.student.name}
+                    </Link>
+                  ) : (
+                    <span className="text-gray-500">Student not found</span>
+                  )}
                 </li>
               ))}
             </ul>
