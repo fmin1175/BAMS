@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
 
       attendanceRecords.forEach(record => {
         const studentId = record.enrollment.student.id;
-        const studentName = `${record.enrollment.student.firstName} ${record.enrollment.student.lastName}`;
+        const studentName = record.enrollment.student.name;
         
         if (!studentStats.has(studentId)) {
           studentStats.set(studentId, {
