@@ -11,12 +11,19 @@ async function main() {
     return;
   }
 
+  // Get the academy
+  const academy = await prisma.academy.findFirst();
+  if (!academy) {
+    console.log('No academy found. Please run seed-coaches.js first.');
+    return;
+  }
+
   // Create some initial courts
   const courts = [
-    { name: 'Court 1', location: 'Main Hall' },
-    { name: 'Court 2', location: 'Main Hall' },
-    { name: 'Court 3', location: 'Side Hall' },
-    { name: 'Court 4', location: 'Side Hall' }
+    { name: 'Court 1', location: 'Main Hall', academyId: academy.id },
+    { name: 'Court 2', location: 'Main Hall', academyId: academy.id },
+    { name: 'Court 3', location: 'Side Hall', academyId: academy.id },
+    { name: 'Court 4', location: 'Side Hall', academyId: academy.id }
   ];
 
   for (const court of courts) {

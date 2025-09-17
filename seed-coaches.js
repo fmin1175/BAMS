@@ -11,25 +11,45 @@ async function main() {
     return;
   }
 
+  // First, create or get an academy
+  let academy = await prisma.academy.findFirst();
+  if (!academy) {
+    academy = await prisma.academy.create({
+      data: {
+        name: 'Elite Badminton Academy',
+        description: 'Premier badminton training facility in Singapore',
+        email: 'info@elitebadminton.sg',
+        phone: '65-6123-4567',
+        website: 'https://elitebadminton.sg'
+      }
+    });
+  }
+
   // Create some initial coaches
   const coaches = [
     { 
       name: 'John Smith', 
       email: 'john.smith@example.com',
-      phone: '555-0101',
-      specialization: 'Tennis'
+      contactNumber: '555-0101',
+      hourlyRate: 50.0,
+      payoutMethod: 'bank_transfer',
+      academyId: academy.id
     },
     { 
       name: 'Sarah Johnson', 
       email: 'sarah.johnson@example.com',
-      phone: '555-0102',
-      specialization: 'Basketball'
+      contactNumber: '555-0102',
+      hourlyRate: 45.0,
+      payoutMethod: 'bank_transfer',
+      academyId: academy.id
     },
     { 
       name: 'Mike Davis', 
       email: 'mike.davis@example.com',
-      phone: '555-0103',
-      specialization: 'Soccer'
+      contactNumber: '555-0103',
+      hourlyRate: 55.0,
+      payoutMethod: 'check',
+      academyId: academy.id
     }
   ];
 
