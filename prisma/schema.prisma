@@ -1,0 +1,208 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  id               Int      @id @default(autoincrement())
+  name             String
+  dateOfBirth      DateTime
+  guardianName     String
+  contactNumber    String
+  medicalNotes     String?
+  registrationDate DateTime @default(now())
+  academyId        Int
+  academy          Academy  @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  classes          ClassEnrollment[]
+
+  @@index([name])
+  @@index([academyId])
+}
+
+model Coach {
+  id            Int       @id @default(autoincrement())
+  name          String
+  hourlyRate    Float
+  payoutMethod  String    // e.g., "bank_transfer", "check", etc.
+  bankDetails   String?   // Optional, can be null if using other payout methods
+  contactNumber String
+  email         String?
+  academyId     Int
+  academy       Academy   @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  classes       Class[]
+  availability  Availability[]
+
+  @@index([name])
+  @@index([academyId])
+}
+
+model Availability {
+  id        Int       @id @default(autoincrement())
+  coachId   Int
+  coach     Coach     @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  date      DateTime
+  startTime DateTime
+  endTime   DateTime
+  isAvailable Boolean @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([coachId])
+  @@index([date])
+}
+
+model Court {
+  id        Int       @id @default(autoincrement())
+  name      String
+  location  String?
+  academyId Int
+  academy   Academy   @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  classes   Class[]
+
+  @@index([name])
+  @@index([academyId])
+}
+
+model Class {
+  id          Int       @id @default(autoincrement())
+  name        String    // e.g., "U12 Beginner"
+  coachId     Int
+  coach       Coach     @relation(fields: [coachId], references: [id])
+  courtId     Int
+  court       Court     @relation(fields: [courtId], references: [id])
+  dayOfWeek   Int       // 0 = Sunday, 1 = Monday, etc.
+  startTime   DateTime
+  endTime     DateTime
+  isRecurring Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  students    ClassEnrollment[]
+  sessions    ClassSession[]
+
+  @@index([coachId])
+  @@index([courtId])
+}
+
+model ClassEnrollment {
+  id        Int       @id @default(autoincrement())
+  studentId Int
+  student   Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  classId   Int
+  class     Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
+  joinedAt  DateTime  @default(now())
+  attendance Attendance[]
+
+  @@unique([studentId, classId])
+}
+
+model ClassSession {
+  id          Int       @id @default(autoincrement())
+  classId     Int
+  class       Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
+  date        DateTime
+  startTime   DateTime
+  endTime     DateTime
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  attendance  Attendance[]
+
+  @@index([classId])
+  @@index([date])
+}
+
+model Attendance {
+  id              Int             @id @default(autoincrement())
+  sessionId       Int
+  session         ClassSession    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  enrollmentId    Int
+  enrollment      ClassEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  status          AttendanceStatus @default(PRESENT)
+  remarks         String?         // For injury, illness, etc.
+  markedAt        DateTime        @default(now())
+  markedBy        Int             // Coach/User ID who marked attendance
+  notificationSent Boolean        @default(false)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@unique([sessionId, enrollmentId])
+  @@index([sessionId])
+  @@index([enrollmentId])
+  @@index([status])
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  ABSENT
+}
+
+model Academy {
+  id              Int       @id @default(autoincrement())
+  name            String
+  description     String?
+  email           String    @unique
+  phone           String?
+  website         String?
+  headCoach       String?
+  headCoachEmail  String?
+  headCoachPhone  String?
+  subscriptionPlan String   @default("Basic") // Basic, Professional, Enterprise
+  maxStudents     Int       @default(100)
+  maxCoaches      Int       @default(5)
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  users           User[]
+  locations       Location[]
+  students        Student[]
+  coaches         Coach[]
+  courts          Court[]
+
+  @@index([email])
+}
+
+model User {
+  id          Int       @id @default(autoincrement())
+  email       String    @unique
+  password    String    // In production, this should be hashed
+  firstName   String
+  lastName    String
+  role        String    @default("admin") // admin, manager, coach
+  isActive    Boolean   @default(true)
+  lastLogin   DateTime?
+  academyId   Int
+  academy     Academy   @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([email])
+  @@index([academyId])
+}
+
+model Location {
+  id          Int       @id @default(autoincrement())
+  name        String
+  address     String
+  courts      Int       @default(1)
+  facilities  String?   // JSON string of facilities array
+  academyId   Int
+  academy     Academy   @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([academyId])
+}

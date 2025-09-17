@@ -1,0 +1,50 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="95" fill="none" stroke="#1e3a8a" stroke-width="10"/>
+  
+  <!-- Badminton shuttlecock -->
+  <g transform="translate(100, 100)">
+    <!-- Shuttlecock feathers -->
+    <g transform="rotate(-15)">
+      <path d="M-15,-30 L-10,-50 L-5,-30 Z" fill="#4f46e5"/>
+      <path d="M-5,-30 L0,-50 L5,-30 Z" fill="#6366f1"/>
+      <path d="M5,-30 L10,-50 L15,-30 Z" fill="#8b5cf6"/>
+      <path d="M-20,-30 L-15,-50 L-10,-30 Z" fill="#3730a3"/>
+      <path d="M10,-30 L15,-50 L20,-30 Z" fill="#a855f7"/>
+      <path d="M-25,-30 L-20,-50 L-15,-30 Z" fill="#312e81"/>
+      <path d="M15,-30 L20,-50 L25,-30 Z" fill="#c084fc"/>
+    </g>
+    
+    <!-- Shuttlecock base -->
+    <ellipse cx="0" cy="-20" rx="12" ry="8" fill="#e5e7eb"/>
+    <ellipse cx="0" cy="-20" rx="10" ry="6" fill="#f3f4f6"/>
+    
+    <!-- Motion lines -->
+    <path d="M-40,-10 Q-20,0 -40,10" stroke="#f59e0b" stroke-width="3" fill="none"/>
+    <path d="M-45,-5 Q-25,5 -45,15" stroke="#f59e0b" stroke-width="2" fill="none"/>
+    <path d="M40,-10 Q20,0 40,10" stroke="#f59e0b" stroke-width="3" fill="none"/>
+    <path d="M45,-5 Q25,5 45,15" stroke="#f59e0b" stroke-width="2" fill="none"/>
+    
+    <!-- Sparkle effects -->
+    <g fill="#f59e0b">
+      <circle cx="35" cy="-35" r="2"/>
+      <circle cx="45" cy="-25" r="1.5"/>
+      <circle cx="40" cy="-45" r="1"/>
+      <circle cx="-35" cy="-35" r="2"/>
+      <circle cx="-45" cy="-25" r="1.5"/>
+      <circle cx="-40" cy="-45" r="1"/>
+    </g>
+    
+    <!-- Star sparkles -->
+    <g fill="#f59e0b">
+      <path d="M50,-30 L52,-28 L50,-26 L48,-28 Z"/>
+      <path d="M-50,-30 L-48,-28 L-50,-26 L-52,-28 Z"/>
+      <path d="M30,40 L32,42 L30,44 L28,42 Z"/>
+      <path d="M-30,40 L-28,42 L-30,44 L-32,42 Z"/>
+    </g>
+  </g>
+  
+  <!-- Academy name -->
+  <text x="100" y="170" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#1e3a8a">Elite Shuttle</text>
+  <text x="100" y="190" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">BADMINTON ACADEMY</text>
+</svg>
