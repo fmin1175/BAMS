@@ -50,10 +50,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // For now, we'll use academyId = 1 as a default
+    // In a real application, this should come from the authenticated user's session
+    const academyId = 1;
+
     const court = await prisma.court.create({
       data: {
         name,
         location: location || null,
+        academyId,
       },
     });
 
