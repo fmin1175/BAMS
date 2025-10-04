@@ -1,5 +1,20 @@
 const { PrismaClient } = require('@prisma/client');
 const { hash } = require('bcrypt');
+
+// Allow passing DATABASE_URL via CLI arg for targeting specific environments
+// Usage: node create-system-admin.js "postgresql://..."
+const dbUrlArg = process.argv[2];
+if (dbUrlArg) {
+  process.env.DATABASE_URL = dbUrlArg;
+  console.log('Using DATABASE_URL from CLI argument');
+}
+
+// Make system admin credentials configurable via environment variables
+const sysAdminEmail = process.env.SYSADMIN_EMAIL || 'sysadmin@example.com';
+const sysAdminPassword = process.env.SYSADMIN_PASSWORD || 'admin123';
+const sysAcademyName = process.env.SYSADMIN_ACADEMY_NAME || 'System Academy';
+const sysAcademyEmail = process.env.SYSADMIN_ACADEMY_EMAIL || 'system@example.com';
+
 const prisma = new PrismaClient();
 
 async function main() {
@@ -7,14 +22,13 @@ async function main() {
     console.log('Creating System Admin user...');
     
     // Hash the password
-    const password = 'admin123';
-    const hashedPassword = await hash(password, 10);
+    const hashedPassword = await hash(sysAdminPassword, 10);
     
     // Check if we need to create an academy for the system admin
     let academyId;
     const systemAcademy = await prisma.academy.findFirst({
       where: {
-        name: 'System Academy'
+        name: sysAcademyName
       }
     });
     
@@ -25,8 +39,8 @@ async function main() {
       // Create a system academy
       const newAcademy = await prisma.academy.create({
         data: {
-          name: 'System Academy',
-          email: 'system@example.com',
+          name: sysAcademyName,
+          email: sysAcademyEmail,
           phone: '000-000-0000',
           description: 'System Academy for administrative purposes'
         }
@@ -38,7 +52,7 @@ async function main() {
     // Check if the system admin user already exists
     const existingUser = await prisma.user.findFirst({
       where: {
-        email: 'sysadmin@example.com',
+        email: sysAdminEmail,
         role: 'SYSTEM_ADMIN'
       }
     });
@@ -51,7 +65,7 @@ async function main() {
     // Create the system admin user
     const user = await prisma.user.create({
       data: {
-        email: 'sysadmin@example.com',
+        email: sysAdminEmail,
         firstName: 'System',
         lastName: 'Admin',
         role: 'SYSTEM_ADMIN',
@@ -62,8 +76,8 @@ async function main() {
     
     console.log('System Admin user created successfully:');
     console.log(`ID: ${user.id}`);
-    console.log(`Email: sysadmin@example.com`);
-    console.log(`Password: ${password}`);
+    console.log(`Email: ${sysAdminEmail}`);
+    console.log(`Password: ${sysAdminPassword}`);
     console.log(`Role: SYSTEM_ADMIN`);
     
   } catch (error) {

@@ -53,10 +53,41 @@ export default function FreeTrialForm({ onClose }: { onClose: () => void }) {
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
-      
+      // Guard: ensure we only parse JSON if the response is actually JSON
+      const contentType = response.headers.get('content-type') || '';
+      let data: any = null;
+      if (contentType.includes('application/json')) {
+        try {
+          data = await response.json();
+        } catch (parseErr: any) {
+          // Provide clearer error when JSON parsing fails
+          const fallbackText = await response.text().catch(() => '');
+          throw new Error(
+            fallbackText
+              ? `Unexpected non-JSON response: ${fallbackText.substring(0, 200)}`
+              : 'Unexpected end of JSON input from server'
+          );
+        }
+      } else {
+        // Non-JSON response (e.g., auth redirect page in preview environments)
+        const text = await response.text().catch(() => '');
+        if (!response.ok) {
+          throw new Error(
+            text
+              ? `Request failed (${response.status}). ${text.substring(0, 200)}`
+              : `Request failed (${response.status}). Non-JSON response returned.`
+          );
+        }
+        // If ok but not JSON, treat as unexpected
+        throw new Error(
+          text
+            ? `Unexpected non-JSON response: ${text.substring(0, 200)}`
+            : 'Unexpected non-JSON response from server.'
+        );
+      }
+
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to process your request');
+        throw new Error((data && data.error) || 'Failed to process your request');
       }
       
       setSuccess(true);
@@ -82,7 +113,12 @@ export default function FreeTrialForm({ onClose }: { onClose: () => void }) {
         // router.push('/thank-you');
       }, 5000);
     } catch (err: any) {
-      setError(err.message || 'An error occurred. Please try again.');
+      // Map common preview protection or auth redirect cases to a clearer message
+      const msg = String(err?.message || 'An error occurred. Please try again.');
+      const hint = msg.includes('Vercel') || msg.toLowerCase().includes('redirect')
+        ? ' If this is a protected preview, please sign in to the preview or deploy to production.'
+        : '';
+      setError(`${msg}${hint}`);
     } finally {
       setIsSubmitting(false);
     }
