@@ -38,8 +38,8 @@ export async function POST(request: NextRequest) {
 
     // Generate a secure password
     const password = generatePassword(12);
-    // Hash the password asynchronously for serverless environments
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Hash the password synchronously to ensure a value is produced
+    const hashedPassword = bcrypt.hashSync(password, 10);
 
     try {
       // Save to database using Prisma

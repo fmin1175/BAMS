@@ -60,8 +60,8 @@ export async function POST(request: NextRequest) {
     
     // Generate a new plain text password
     const plainPassword = generatePassword(12);
-    // Hash the password for database storage asynchronously
-    const hashedPassword = await bcrypt.hash(plainPassword, 10);
+    // Hash the password synchronously to ensure a value is produced
+    const hashedPassword = bcrypt.hashSync(plainPassword, 10);
     
     // Create a new user with Academy Admin role
     const user = await prisma.user.create({
