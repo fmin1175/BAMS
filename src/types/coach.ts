@@ -2,6 +2,10 @@ export interface Coach {
   id: number;
   name: string;
   hourlyRate: number;
+  sessionRate?: number;
+  paymentType?: 'HOURLY' | 'PER_SESSION';
+  paymentFrequency?: 'WEEKLY' | 'MONTHLY';
+  monthlySalary?: number;
   payoutMethod: string;
   bankDetails?: string;
   contactNumber: string;
@@ -13,6 +17,10 @@ export interface Coach {
 export interface CoachFormData {
   name: string;
   hourlyRate: number;
+  sessionRate?: number;
+  paymentType: 'HOURLY' | 'PER_SESSION';
+  paymentFrequency: 'WEEKLY' | 'MONTHLY';
+  monthlySalary?: number;
   payoutMethod: string;
   bankDetails?: string;
   contactNumber: string;

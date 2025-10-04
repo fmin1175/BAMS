@@ -50,7 +50,7 @@ async function seedDatabase() {
         password: 'admin123', // In production, this should be hashed
         firstName: 'John',
         lastName: 'Admin',
-        role: 'admin',
+        role: 'SYSTEM_ADMIN',
         academyId: academy.id
       }
     }),
@@ -60,7 +60,7 @@ async function seedDatabase() {
         password: 'manager123',
         firstName: 'Lisa',
         lastName: 'Manager',
-        role: 'manager',
+        role: 'ACADEMY_ADMIN',
         academyId: academy.id
       }
     })
@@ -184,6 +184,7 @@ async function seedDatabase() {
         guardianName: 'Robert Thompson',
         contactNumber: '+1-555-1001',
         medicalNotes: 'No known allergies',
+        monthlyFee: 85.00,
         academyId: academy.id
       }
     }),
@@ -194,6 +195,7 @@ async function seedDatabase() {
         guardianName: 'Jennifer Williams',
         contactNumber: '+1-555-1002',
         medicalNotes: 'Asthma - carries inhaler',
+        monthlyFee: 90.00,
         academyId: academy.id
       }
     }),
@@ -204,6 +206,7 @@ async function seedDatabase() {
         guardianName: 'Carlos Martinez',
         contactNumber: '+1-555-1003',
         medicalNotes: null,
+        monthlyFee: 75.00,
         academyId: academy.id
       }
     }),
@@ -214,6 +217,7 @@ async function seedDatabase() {
         guardianName: 'Wei Zhang',
         contactNumber: '+1-555-1004',
         medicalNotes: 'Previous ankle injury - cleared for play',
+        monthlyFee: 95.00,
         academyId: academy.id
       }
     }),
@@ -224,6 +228,7 @@ async function seedDatabase() {
         guardianName: 'Michelle Brown',
         contactNumber: '+1-555-1005',
         medicalNotes: null,
+        monthlyFee: 80.00,
         academyId: academy.id
       }
     }),
@@ -234,6 +239,7 @@ async function seedDatabase() {
         guardianName: 'Mark Davis',
         contactNumber: '+1-555-1006',
         medicalNotes: 'Food allergies - nuts',
+        monthlyFee: 85.00,
         academyId: academy.id
       }
     }),
@@ -244,6 +250,7 @@ async function seedDatabase() {
         guardianName: 'Sarah Wilson',
         contactNumber: '+1-555-1007',
         medicalNotes: null,
+        monthlyFee: 90.00,
         academyId: academy.id
       }
     }),
@@ -254,6 +261,7 @@ async function seedDatabase() {
         guardianName: 'Ana Garcia',
         contactNumber: '+1-555-1008',
         medicalNotes: 'Wears glasses',
+        monthlyFee: 75.00,
         academyId: academy.id
       }
     })

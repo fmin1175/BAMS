@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { Student, StudentFormData } from '@/types/student';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface StudentFormProps {
   student?: Student;
@@ -12,6 +13,7 @@ interface StudentFormProps {
 
 export default function StudentForm({ student, isEditing = false }: StudentFormProps) {
   const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -21,6 +23,7 @@ export default function StudentForm({ student, isEditing = false }: StudentFormP
       dateOfBirth: student.dateOfBirth ? new Date(student.dateOfBirth).toISOString().split('T')[0] : '',
       guardianName: student.guardianName,
       contactNumber: student.contactNumber,
+      monthlyFee: student.monthlyFee || 0,
       medicalNotes: student.medicalNotes || ''
     } : {}
   });
@@ -49,6 +52,13 @@ export default function StudentForm({ student, isEditing = false }: StudentFormP
     setError(null);
     
     try {
+      // Check if user is authenticated
+      if (!isAuthenticated || !user) {
+        setError('User not authenticated');
+        setIsSubmitting(false);
+        return;
+      }
+      
       const url = isEditing ? `/api/students/${student?.id}` : '/api/students';
       const method = isEditing ? 'PUT' : 'POST';
       
@@ -56,6 +66,9 @@ export default function StudentForm({ student, isEditing = false }: StudentFormP
         method,
         headers: {
           'Content-Type': 'application/json',
+          'x-user-data': JSON.stringify({
+            academyId: user.academyId
+          })
         },
         body: JSON.stringify(data),
       });
@@ -169,6 +182,32 @@ export default function StudentForm({ student, isEditing = false }: StudentFormP
         />
         {errors.contactNumber && (
           <p className="mt-1 text-sm text-red-600">{errors.contactNumber.message}</p>
+        )}
+      </div>
+
+      <div>
+        <label htmlFor="monthlyFee" className="block text-sm font-medium text-gray-700">
+          Monthly Fee
+        </label>
+        <div className="mt-1 relative rounded-md shadow-sm">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <span className="text-gray-500 sm:text-sm">$</span>
+          </div>
+          <input
+            type="number"
+            id="monthlyFee"
+            step="0.01"
+            min="0"
+            {...register('monthlyFee', { 
+              required: 'Monthly fee is required',
+              valueAsNumber: true,
+              min: { value: 0, message: 'Monthly fee cannot be negative' }
+            })}
+            className="pl-7 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+          />
+        </div>
+        {errors.monthlyFee && (
+          <p className="mt-1 text-sm text-red-600">{errors.monthlyFee.message}</p>
         )}
       </div>
 

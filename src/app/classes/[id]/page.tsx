@@ -38,6 +38,7 @@ export default function ClassDetailPage({ params }: { params: { id: string } }) 
 
   // Format time for display
   const formatTime = (time: string | Date) => {
+    if (!time) return "Time not available";
     const date = new Date(time);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
@@ -146,9 +147,9 @@ export default function ClassDetailPage({ params }: { params: { id: string } }) 
               </dd>
             </div>
             <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-              <dt className="text-sm font-medium text-gray-500">Court</dt>
+              <dt className="text-sm font-medium text-gray-500">Location</dt>
               <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                {classData.court ? classData.court.name : 'Not assigned'}
+                {classData.location ? classData.location.name : 'Not assigned'}
               </dd>
             </div>
           </dl>

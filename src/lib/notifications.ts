@@ -263,8 +263,10 @@ export async function processAttendanceNotifications(sessionId: number) {
       }
     });
 
-    const notificationPromises = absentAttendance.map(async (attendance) => {
-      const student = attendance.enrollment.student;
+    const notificationPromises = absentAttendance
+      .filter((attendance) => attendance.enrollment && attendance.enrollment.student)
+      .map(async (attendance) => {
+      const student = attendance.enrollment!.student;
       const session = attendance.session;
       
       const notificationData: NotificationData = {

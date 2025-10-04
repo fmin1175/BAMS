@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+  <!-- Outer circle -->
+  <circle cx="250" cy="250" r="240" fill="#f0f0f0" stroke="#d0d0d0" stroke-width="10"/>
+  <!-- Inner circle -->
+  <circle cx="250" cy="250" r="200" fill="none" stroke="#003366" stroke-width="15"/>
+  
+  <!-- Shuttlecock body -->
+  <path d="M250 350 C 200 300, 150 200, 180 120 C 220 150, 280 150, 320 120 C 350 200, 300 300, 250 350" fill="#1e88e5" stroke="#0d47a1" stroke-width="5"/>
+  
+  <!-- Shuttlecock feathers -->
+  <path d="M180 120 C 200 80, 300 80, 320 120" fill="none" stroke="#0d47a1" stroke-width="8"/>
+  <path d="M200 140 C 220 100, 280 100, 300 140" fill="#1e88e5" stroke="#0d47a1" stroke-width="3"/>
+  
+  <!-- Shuttlecock base -->
+  <circle cx="250" cy="350" r="30" fill="#424242"/>
+  <rect x="220" y="350" width="60" height="40" fill="#424242"/>
+  
+  <!-- Feather details -->
+  <path d="M180 120 L 200 180" stroke="#1e88e5" stroke-width="8"/>
+  <path d="M200 110 L 220 170" stroke="#1e88e5" stroke-width="8"/>
+  <path d="M220 105 L 240 165" stroke="#1e88e5" stroke-width="8"/>
+  <path d="M240 105 L 260 165" stroke="#1e88e5" stroke-width="8"/>
+  <path d="M260 105 L 280 165" stroke="#1e88e5" stroke-width="8"/>
+  <path d="M280 110 L 300 170" stroke="#1e88e5" stroke-width="8"/>
+  <path d="M300 120 L 320 180" stroke="#1e88e5" stroke-width="8"/>
+  
+  <!-- Arrow -->
+  <path d="M320 120 C 380 180, 400 220, 420 100" fill="none" stroke="#ff9800" stroke-width="12"/>
+  <path d="M420 100 L 400 130 L 440 130 Z" fill="#ff9800"/>
+</svg>

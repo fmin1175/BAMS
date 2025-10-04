@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { Class } from '@/types/class';
 import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { ActionButton } from '@/components/ui/ActionButton';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Simple debounce implementation
 interface DebouncedFunction {
@@ -40,19 +42,54 @@ export default function ClassesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [classToDelete, setClassToDelete] = useState<number | null>(null);
   const router = useRouter();
+  const { user } = useAuth();
 
   const fetchClasses = async (search?: string) => {
     try {
       setLoading(true);
-      const url = search ? `/api/classes?search=${encodeURIComponent(search)}` : '/api/classes';
-      const response = await fetch(url);
+      
+      // Build URL with search and academyId parameters if applicable
+      let url = '/api/classes';
+      const params = new URLSearchParams();
+      
+      if (search) {
+        params.append('search', search);
+      }
+      
+      // Add academyId parameter for Academy Admins
+      if (user && user.role === 'ACADEMY_ADMIN' && user.academyId) {
+        params.append('academyId', user.academyId.toString());
+      }
+      
+      // Append parameters to URL if any exist
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+      
+      // Add authentication header
+      const headers: HeadersInit = {};
+      if (user && user.academyId) {
+        headers['x-user-data'] = JSON.stringify({ academyId: user.academyId });
+      }
+      
+      const response = await fetch(url, { headers });
       
       if (!response.ok) {
         throw new Error('Failed to fetch classes');
       }
       
       const data = await response.json();
+      
+      // Log the raw data to see what we're getting from the API
+      console.log("Raw class data from API:", data);
+      if (data.length > 0) {
+        console.log("First class startTime:", data[0].startTime);
+        console.log("First class startTime type:", typeof data[0].startTime);
+      }
+      
       setClasses(data);
       setError(null);
     } catch (err) {
@@ -63,10 +100,40 @@ export default function ClassesPage() {
     }
   };
 
-  // Format time for display
+  // Format time for display - Direct display without timezone conversion
   const formatTime = (timeString: string | Date) => {
-    const date = new Date(timeString);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (!timeString) return "Time not available";
+    
+    let hours = 0;
+    let minutes = 0;
+    
+    // Handle Date objects
+    if (timeString instanceof Date) {
+      // Use local time methods to avoid timezone conversion
+      hours = timeString.getHours();
+      minutes = timeString.getMinutes();
+    } 
+    // Handle string inputs
+    else if (typeof timeString === 'string') {
+      // For ISO format strings with T separator
+      if (timeString.includes('T')) {
+        const timePart = timeString.split('T')[1];
+        const [h, m] = timePart.split(':').map(Number);
+        hours = h;
+        minutes = m;
+      } 
+      // For simple time strings like "10:00:00"
+      else if (timeString.includes(':')) {
+        const [h, m] = timeString.split(':').map(Number);
+        hours = h;
+        minutes = m;
+      }
+    }
+    
+    // Format with AM/PM
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12; // Convert 0 to 12 for 12 AM
+    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
   };
 
   // Debounced search function
@@ -88,16 +155,30 @@ export default function ClassesPage() {
     return () => {
       debouncedSearch.cancel();
     };
-  }, []);
+  }, [user]);
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this class?')) {
-      return;
-    }
+  const confirmDelete = (id: number) => {
+    setClassToDelete(id);
+    setShowConfirmDialog(true);
+  };
+
+  const handleDelete = async () => {
+    if (classToDelete === null) return;
     
     try {
-      const response = await fetch(`/api/classes/${id}`, {
+      // Add authentication headers
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      
+      // Add user data to headers if available
+      if (user && user.academyId) {
+        headers['x-user-data'] = JSON.stringify({ academyId: user.academyId });
+      }
+      
+      const response = await fetch(`/api/classes/${classToDelete}`, {
         method: 'DELETE',
+        headers
       });
       
       if (!response.ok) {
@@ -106,14 +187,23 @@ export default function ClassesPage() {
       
       // Refresh the list
       fetchClasses(searchTerm);
+      // Reset state
+      setClassToDelete(null);
+      setShowConfirmDialog(false);
     } catch (err) {
       console.error('Error deleting class:', err);
       setError('Failed to delete class. Please try again.');
+      setShowConfirmDialog(false);
     }
   };
 
+  const cancelDelete = () => {
+    setClassToDelete(null);
+    setShowConfirmDialog(false);
+  };
+
   return (
-    <ProtectedRoute>
+    <ProtectedRoute allowedRoles={['ACADEMY_ADMIN', 'SYSTEM_ADMIN']}>
       <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Classes</h1>
@@ -141,6 +231,30 @@ export default function ClassesPage() {
         </div>
       )}
       
+      {/* Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h3 className="text-lg font-medium mb-4">Confirm Deletion</h3>
+            <p className="mb-6">Are you sure you want to delete this class?</p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={cancelDelete}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <p className="text-gray-500">Loading classes...</p>
@@ -158,7 +272,7 @@ export default function ClassesPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Day</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Coach</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Court</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">Actions</th>
               </tr>
             </thead>
@@ -183,27 +297,17 @@ export default function ClassesPage() {
                     {classItem.coach?.name || 'Not assigned'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {classItem.court?.name || 'Not assigned'}
+                    {classItem.location?.name || 'Not assigned'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium min-w-[120px]">
-                    <Link 
-                      href={`/classes/${classItem.id}`}
-                      className="text-blue-600 hover:text-blue-900 mr-4"
-                    >
-                      View
-                    </Link>
-                    <Link 
+                    <ActionButton 
+                      variant="edit"
                       href={`/classes/${classItem.id}/edit`}
-                      className="text-indigo-600 hover:text-indigo-900 mr-4"
-                    >
-                      Edit
-                    </Link>
-                    <button
-                      onClick={() => handleDelete(classItem.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      Delete
-                    </button>
+                    />
+                    <ActionButton
+                      variant="delete"
+                      onClick={() => confirmDelete(classItem.id)}
+                    />
                   </td>
                 </tr>
               ))}

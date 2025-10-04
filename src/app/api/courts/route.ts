@@ -5,19 +5,13 @@ import prisma from '@/lib/prisma';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const search = searchParams.get('search');
+    const academyId = searchParams.get('academyId');
     
-    let whereClause = {};
+    let whereClause: any = {};
     
-    // If search parameter exists, filter by name or ID
-    if (search) {
-      const searchId = parseInt(search);
-      whereClause = {
-        OR: [
-          { name: { contains: search, mode: 'insensitive' } },
-          ...(isNaN(searchId) ? [] : [{ id: searchId }])
-        ]
-      };
+    // Filter by academy ID if provided (for Academy Admins)
+    if (academyId) {
+      whereClause.academyId = parseInt(academyId);
     }
     
     const courts = await prisma.court.findMany({

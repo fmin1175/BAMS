@@ -13,6 +13,8 @@ export async function GET(request: NextRequest) {
     // Calculate date range based on period
     const now = new Date();
     let startDate = new Date();
+    let endDate = new Date();
+    endDate.setDate(now.getDate() + 30); // Include future dates for testing
     
     switch (period) {
       case 'week':
@@ -37,7 +39,7 @@ export async function GET(request: NextRequest) {
         session: {
           date: {
             gte: startDate,
-            lte: now
+            lte: endDate
           }
         }
       };
@@ -66,6 +68,11 @@ export async function GET(request: NextRequest) {
       const studentStats = new Map();
 
       attendanceRecords.forEach(record => {
+        // Skip records without enrollment (null enrollment)
+        if (!record.enrollment || !record.enrollment.student) {
+          return;
+        }
+        
         const studentId = record.enrollment.student.id;
         const studentName = record.enrollment.student.name;
         
@@ -114,7 +121,7 @@ export async function GET(request: NextRequest) {
       const whereClause: any = {
         date: {
           gte: startDate,
-          lte: now
+          lte: endDate
         }
       };
 
@@ -194,7 +201,7 @@ export async function GET(request: NextRequest) {
         session: {
           date: {
             gte: startDate,
-            lte: now
+            lte: endDate
           }
         }
       };
@@ -244,7 +251,7 @@ export async function GET(request: NextRequest) {
         where: {
           date: {
             gte: startDate,
-            lte: now
+            lte: endDate
           },
           ...(classId && classId !== 'all' ? { classId: parseInt(classId) } : {})
         }

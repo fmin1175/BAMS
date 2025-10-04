@@ -1,24 +1,40 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
+import { useState } from 'react';
+import FreeTrialForm from '@/components/FreeTrialForm';
 
 export default function Home() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showFreeTrialForm, setShowFreeTrialForm] = useState(false);
+
+  const openFreeTrialForm = () => {
+    setShowFreeTrialForm(true);
+    // Call the show method on the window object
+    if (typeof window !== 'undefined' && window.showFreeTrialForm) {
+      window.showFreeTrialForm();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
+      {/* Free Trial Form Modal */}
+      <FreeTrialForm onClose={() => setShowFreeTrialForm(false)} />
+      
       {/* Navigation Header */}
       <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              {/* Badminton Racket Icon */}
-              <div className="mr-3 w-8 h-8 flex items-center justify-center">
-                <svg viewBox="0 0 24 24" fill="none" className="w-8 h-8 text-blue-600">
-                  <path d="M12 2L8 6L12 10L16 6L12 2Z" fill="currentColor"/>
-                  <path d="M12 10L8 14L12 18L16 14L12 10Z" fill="currentColor"/>
-                  <rect x="11" y="18" width="2" height="4" fill="currentColor"/>
-                </svg>
-              </div>
-              <span className="text-xl font-bold text-gray-900">Badminton Academy Management System</span>
+              <img src="/logo.png" alt="Badminton Logo" className="h-10 w-10 mr-2" style={{objectFit: 'contain'}} />
+              <span className="text-lg sm:text-xl font-bold text-gray-900">
+                <span className="hidden sm:inline">Badminton Academy Management System</span>
+                <span className="sm:hidden">BAMS</span>
+              </span>
             </div>
+            
+            {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
               <a href="#features" className="text-gray-700 hover:text-blue-600">Features</a>
               <a href="#testimonials" className="text-gray-700 hover:text-blue-600">Testimonials</a>
@@ -27,7 +43,59 @@ export default function Home() {
                 Login
               </Link>
             </div>
+
+            {/* Mobile menu button */}
+            <div className="md:hidden">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="text-gray-700 hover:text-blue-600 focus:outline-none focus:text-blue-600"
+              >
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  {mobileMenuOpen ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  )}
+                </svg>
+              </button>
+            </div>
           </div>
+
+          {/* Mobile Navigation Menu */}
+          {mobileMenuOpen && (
+            <div className="md:hidden">
+              <div className="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
+                <a 
+                  href="#features" 
+                  className="block px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Features
+                </a>
+                <a 
+                  href="#testimonials" 
+                  className="block px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Testimonials
+                </a>
+                <a 
+                  href="#pricing" 
+                  className="block px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Pricing
+                </a>
+                <Link 
+                  href="/login" 
+                  className="block mx-3 mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-center"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Login
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 
@@ -45,10 +113,16 @@ export default function Home() {
                 One stop solution for your Sports Academy.
               </p>
               <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <button className="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 font-semibold text-lg">
+                <button 
+                  onClick={openFreeTrialForm}
+                  className="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 font-semibold text-lg"
+                >
                   Start Free Trial
                 </button>
-                <button className="border border-gray-300 text-gray-700 px-8 py-4 rounded-lg hover:bg-gray-50 font-semibold text-lg">
+                <button 
+                  onClick={() => alert("Demo booking is coming soon! Please check back later.")}
+                  className="border border-gray-300 text-gray-700 px-8 py-4 rounded-lg hover:bg-gray-50 font-semibold text-lg cursor-pointer"
+                >
                   Book a Demo
                 </button>
               </div>
@@ -281,10 +355,16 @@ export default function Home() {
             Join hundreds of academy owners who have streamlined their operations
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-white text-blue-600 px-8 py-4 rounded-lg hover:bg-gray-50 font-semibold text-lg">
+            <button 
+              onClick={openFreeTrialForm}
+              className="bg-white text-blue-600 px-8 py-4 rounded-lg hover:bg-gray-50 font-semibold text-lg cursor-pointer"
+            >
               Start Free Trial
             </button>
-            <button className="border-2 border-white text-white px-8 py-4 rounded-lg hover:bg-white hover:text-blue-600 font-semibold text-lg">
+            <button 
+              onClick={() => alert("Demo scheduling is coming soon! Please check back later.")}
+              className="border-2 border-white text-white px-8 py-4 rounded-lg hover:bg-white hover:text-blue-600 font-semibold text-lg cursor-pointer"
+            >
               Schedule Demo
             </button>
           </div>
@@ -297,14 +377,6 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center mb-4">
-                {/* Badminton Racket Icon */}
-                <svg className="w-8 h-8 text-blue-400 mr-3" fill="currentColor" viewBox="0 0 24 24">
-                  <ellipse cx="12" cy="6" rx="4" ry="6" fill="none" stroke="currentColor" strokeWidth="2"/>
-                  <line x1="12" y1="12" x2="12" y2="22" stroke="currentColor" strokeWidth="3"/>
-                  <line x1="10" y1="20" x2="14" y2="20" stroke="currentColor" strokeWidth="2"/>
-                  <line x1="8" y1="4" x2="16" y2="8" stroke="currentColor" strokeWidth="1"/>
-                  <line x1="8" y1="8" x2="16" y2="4" stroke="currentColor" strokeWidth="1"/>
-                </svg>
                 <span className="text-xl font-bold">Badminton Academy Management System</span>
               </div>
               <p className="text-gray-400 mb-4">

@@ -1,29 +1,23 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import Cookies from 'js-cookie';
+import { jwtVerify, SignJWT } from 'jose';
 
 interface User {
   id: number;
   email: string;
   firstName: string;
   lastName: string;
-  role: string;
+  role: 'SYSTEM_ADMIN' | 'ACADEMY_ADMIN' | 'COACH';
   academyId: number;
-}
-
-interface Academy {
-  id: number;
-  name: string;
-  email: string;
-  subscriptionPlan: string;
+  trialExpiryDate?: string; // Added for free trial expiry
 }
 
 interface AuthContextType {
   user: User | null;
-  academy: Academy | null;
-  isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<User | null>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -32,102 +26,122 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [academy, setAcademy] = useState<Academy | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing session on mount
-    checkAuthStatus();
+    // Check if user token is stored in cookies
+    const token = Cookies.get('auth_token');
+    if (token) {
+      try {
+        // Decode the token to get user data (client-side)
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        
+        const parsedUser = JSON.parse(jsonPayload);
+        
+        // Check if the user is on a free trial and if it has expired
+        if (parsedUser.trialExpiryDate) {
+          const expiryDate = new Date(parsedUser.trialExpiryDate);
+          const currentDate = new Date();
+          
+          if (currentDate > expiryDate) {
+            // Trial has expired, log the user out
+            console.log('Free trial has expired. Logging out.');
+            Cookies.remove('auth_token');
+            setUser(null);
+            setLoading(false);
+            return;
+          }
+        }
+        
+        // Ensure the role is one of the allowed values in the User interface
+        if (parsedUser.role && typeof parsedUser.role === 'string') {
+          // Convert to proper enum value if it's a string
+          const validRole = ['SYSTEM_ADMIN', 'ACADEMY_ADMIN', 'COACH'].includes(parsedUser.role.toUpperCase())
+            ? parsedUser.role.toUpperCase() as 'SYSTEM_ADMIN' | 'ACADEMY_ADMIN' | 'COACH'
+            : 'ACADEMY_ADMIN'; // Default to ACADEMY_ADMIN if invalid
+          
+          // Create a properly typed user object
+          setUser({
+            ...parsedUser,
+            role: validRole
+          });
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Error parsing token:', error);
+        setUser(null);
+      }
+    }
+    setLoading(false);
   }, []);
 
-  const checkAuthStatus = async () => {
+  const login = async (email: string, password: string) => {
+    setLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
-      if (token) {
-        // In a real app, you'd validate the token with your API
-        // For now, we'll simulate a logged-in state
-        const userData = localStorage.getItem('userData');
-        const academyData = localStorage.getItem('academyData');
-        
-        if (userData && academyData) {
-          setUser(JSON.parse(userData));
-          setAcademy(JSON.parse(academyData));
-        }
+      // Make a real API call to authenticate the user
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+      
+      if (!response.ok) {
+        return null;
       }
+      
+      const userData = await response.json();
+      
+      // The API endpoint already sets the auth_token cookie, so we don't need to set it here
+      // Just update the user state with the returned data
+      setUser(userData);
+      return userData;
     } catch (error) {
-      console.error('Auth check failed:', error);
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userData');
-      localStorage.removeItem('academyData');
+      console.error('Login error:', error);
+      return null;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const logout = async () => {
     try {
-      setIsLoading(true);
+      // Call the logout API to clear server-side cookies
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+      });
       
-      // Simulate API call - in real app, this would be an actual API request
-      // For demo purposes, we'll accept any email/password combination
-      if (email && password) {
-        const mockUser: User = {
-          id: 1,
-          email: email,
-          firstName: 'Academy',
-          lastName: 'Owner',
-          role: 'admin',
-          academyId: 1
-        };
-
-        const mockAcademy: Academy = {
-          id: 1,
-          name: 'Default Academy',
-          email: 'admin@defaultacademy.com',
-          subscriptionPlan: 'Basic'
-        };
-
-        // Store auth data
-        localStorage.setItem('authToken', 'mock-jwt-token');
-        localStorage.setItem('userData', JSON.stringify(mockUser));
-        localStorage.setItem('academyData', JSON.stringify(mockAcademy));
-
-        setUser(mockUser);
-        setAcademy(mockAcademy);
-        
-        return true;
-      }
+      // Also clear client-side cookie
+      Cookies.remove('auth_token');
+      setUser(null);
       
-      return false;
+      // Redirect to login page
+      window.location.href = '/login';
     } catch (error) {
-      console.error('Login failed:', error);
-      return false;
-    } finally {
-      setIsLoading(false);
+      console.error('Logout error:', error);
+      // Still attempt to logout locally even if API call fails
+      Cookies.remove('auth_token');
+      setUser(null);
+      window.location.href = '/login';
     }
-  };
-
-  const logout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userData');
-    localStorage.removeItem('academyData');
-    setUser(null);
-    setAcademy(null);
-    router.push('/');
-  };
-
-  const value: AuthContextType = {
-    user,
-    academy,
-    isLoading,
-    login,
-    logout,
-    isAuthenticated: !!user
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        logout,
+        isAuthenticated: !!user,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

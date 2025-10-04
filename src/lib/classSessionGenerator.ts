@@ -33,19 +33,27 @@ export async function generateClassSessions(
               gte: startDate,
               lte: endDate
             }
+          },
+          include: {
+            attendance: true
           }
         }
       }
     });
 
     const generatedSessions = [];
+    const skippedSessions = [];
 
     for (const classItem of classes) {
-      const existingSessions = new Set(
-        classItem.sessions.map(session => 
-          session.date.toISOString().split('T')[0]
-        )
-      );
+      // Track existing sessions and those with attendance
+      const existingSessions = new Map();
+      classItem.sessions.forEach(session => {
+        const dateKey = session.date.toISOString().split('T')[0];
+        existingSessions.set(dateKey, {
+          id: session.id,
+          hasAttendance: session.attendance && session.attendance.length > 0
+        });
+      });
 
       // Generate sessions for each week
       const currentDate = new Date(startDate);
@@ -57,19 +65,44 @@ export async function generateClassSessions(
         const sessionDate = new Date(currentDate);
         sessionDate.setDate(currentDate.getDate() + daysUntilClass);
 
-        // Skip if session already exists or is in the past
+        // Skip if session is in the past
+        if (sessionDate < startDate) {
+          currentDate.setDate(currentDate.getDate() + 7); // Move to next week
+          continue;
+        }
+
+        // Check if session already exists for this date
         const sessionDateString = sessionDate.toISOString().split('T')[0];
-        if (sessionDate >= startDate && 
-            sessionDate <= endDate && 
-            !existingSessions.has(sessionDateString)) {
+        const existingSession = existingSessions.get(sessionDateString);
+        
+        if (existingSession) {
+          if (existingSession.hasAttendance) {
+            // Skip sessions that already have attendance records
+            skippedSessions.push({
+              date: sessionDateString,
+              reason: 'attendance_exists'
+            });
+          } else {
+            // Delete existing session without attendance so we can recreate it
+            console.log(`Deleting existing session without attendance for ${sessionDateString}`);
+            await prisma.classSession.delete({
+              where: { id: existingSession.id }
+            });
+          }
+        }
+        
+        // Create new session if we're within date range and either no existing session or we deleted one without attendance
+        if (sessionDate >= startDate && sessionDate <= endDate && 
+            (!existingSession || (existingSession && !existingSession.hasAttendance))) {
           
           // Create session date with proper time
           const sessionDateTime = new Date(sessionDate);
           const startTime = new Date(classItem.startTime);
           const endTime = new Date(classItem.endTime);
           
+          // Set hours and minutes from the class's start and end times
           sessionDateTime.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
-          const sessionEndTime = new Date(sessionDateTime);
+          const sessionEndTime = new Date(sessionDate);
           sessionEndTime.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
 
           const newSession = await prisma.classSession.create({
@@ -93,7 +126,8 @@ export async function generateClassSessions(
     return {
       success: true,
       generatedCount: generatedSessions.length,
-      sessions: generatedSessions
+      sessions: generatedSessions,
+      skippedSessions: skippedSessions
     };
 
   } catch (error) {

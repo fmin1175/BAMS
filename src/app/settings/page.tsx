@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 interface AcademySettings {
   academyName: string;
@@ -13,6 +14,8 @@ interface AcademySettings {
   headCoach: string;
   headCoachEmail: string;
   headCoachPhone: string;
+  headCoachQualification: string;
+  defaultCoachPassword: string;
   locations: TrainingLocation[];
   operatingHours: {
     monday: { open: string; close: string; closed: boolean };
@@ -37,24 +40,26 @@ interface TrainingLocation {
 }
 
 export default function Settings() {
+  return (
+    <ProtectedRoute allowedRoles={['SYSTEM_ADMIN', 'ACADEMY_ADMIN']}>
+      <SettingsContent />
+    </ProtectedRoute>
+  );
+}
+
+function SettingsContent() {
   const [settings, setSettings] = useState<AcademySettings>({
-    academyName: 'Elite Shuttle Badminton Academy',
-    description: 'Professional badminton training academy focused on developing champions',
-    email: 'info@eliteshuttle.com',
-    phone: '+1 (555) 123-4567',
-    website: 'www.eliteshuttle.com',
-    headCoach: 'John Smith',
-    headCoachEmail: 'john.smith@eliteshuttle.com',
-    headCoachPhone: '+1 (555) 987-6543',
-    locations: [
-      {
-        id: '1',
-        name: 'Main Training Center',
-        address: '123 Sports Complex, City Center',
-        courts: 8,
-        facilities: ['Air Conditioning', 'Parking', 'Changing Rooms', 'Equipment Storage']
-      }
-    ],
+    academyName: '',
+    description: '',
+    email: '',
+    phone: '',
+    website: '',
+    headCoach: '',
+    headCoachEmail: '',
+    headCoachPhone: '',
+    headCoachQualification: '',
+    defaultCoachPassword: 'coach',
+    locations: [],
     operatingHours: {
       monday: { open: '06:00', close: '22:00', closed: false },
       tuesday: { open: '06:00', close: '22:00', closed: false },
@@ -64,10 +69,40 @@ export default function Settings() {
       saturday: { open: '08:00', close: '20:00', closed: false },
       sunday: { open: '08:00', close: '18:00', closed: false }
     },
-    subscriptionPlan: 'Professional',
-    maxStudents: 500,
-    maxCoaches: 20
+    subscriptionPlan: '',
+    maxStudents: 0,
+    maxCoaches: 0
   });
+  
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Fetch settings data from API
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Make API request without relying on localStorage
+        const response = await fetch('/api/settings');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch academy settings');
+        }
+        
+        const data = await response.json();
+        setSettings(data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching settings:', err);
+        setError('Failed to load academy settings. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchSettings();
+  }, []);
 
   const [activeTab, setActiveTab] = useState('general');
   const [isSaving, setIsSaving] = useState(false);
@@ -113,12 +148,40 @@ export default function Settings() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // TODO: Implement actual save logic
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Get user data from localStorage
+      const userData = localStorage.getItem('user');
+      if (!userData) {
+        setSaveMessage('User not authenticated');
+        setIsSaving(false);
+        return;
+      }
+      
+      // Parse user data
+      const user = JSON.parse(userData);
+      
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-data': JSON.stringify({
+            academyId: user.academyId
+          })
+        },
+        body: JSON.stringify(settings),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save settings');
+      }
+      
+      const data = await response.json();
       setSaveMessage('Settings saved successfully!');
       setTimeout(() => setSaveMessage(''), 3000);
     } catch (error) {
-      setSaveMessage('Error saving settings. Please try again.');
+      console.error('Error saving settings:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error saving settings. Please try again.';
+      setSaveMessage(errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -132,6 +195,36 @@ export default function Settings() {
     { id: 'subscription', name: 'Subscription', icon: '💳' }
   ];
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading academy settings...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center bg-red-50 p-6 rounded-lg max-w-md">
+          <svg className="h-12 w-12 text-red-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p className="mt-4 text-red-800">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -139,19 +232,7 @@ export default function Settings() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
-              <Link href="/" className="mr-4 text-gray-400 hover:text-gray-600">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-              </Link>
               <div className="flex items-center">
-                <Image 
-                  src="/logo.svg" 
-                  alt="Elite Shuttle Logo" 
-                  width={32} 
-                  height={32}
-                  className="mr-3"
-                />
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">Academy Settings</h1>
                   <p className="text-gray-600">Manage your academy configuration</p>
@@ -241,6 +322,16 @@ export default function Settings() {
                       className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Default Coach Password</label>
+                    <input
+                      type="text"
+                      value={settings.defaultCoachPassword}
+                      onChange={(e) => handleInputChange('defaultCoachPassword', e.target.value)}
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">This password will be used for all new coach accounts</p>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Description</label>
@@ -282,6 +373,15 @@ export default function Settings() {
                       type="tel"
                       value={settings.headCoachPhone}
                       onChange={(e) => handleInputChange('headCoachPhone', e.target.value)}
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Head Coach Qualification</label>
+                    <input
+                      type="text"
+                      value={settings.headCoachQualification}
+                      onChange={(e) => handleInputChange('headCoachQualification', e.target.value)}
                       className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>

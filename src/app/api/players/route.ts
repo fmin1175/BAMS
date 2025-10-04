@@ -2,9 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
 // GET /api/players - Get all players
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const academyId = searchParams.get('academyId');
+    
+    let whereClause: any = {};
+    
+    // Filter by academy ID if provided (for Academy Admins)
+    if (academyId) {
+      whereClause.academyId = parseInt(academyId);
+    }
+    
     const players = await prisma.student.findMany({
+      where: whereClause,
       orderBy: {
         name: 'asc',
       },

@@ -1,37 +1,66 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import StudentForm from '@/components/StudentForm';
 import { Student } from '@/types/student';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function EditStudentPage() {
-  const params = useParams();
+  const { id } = useParams() as { id: string };
+  const router = useRouter();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [student, setStudent] = useState<Student | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Wait for auth to be ready before fetching
+    if (authLoading) return;
+    
+    // Create a separate function to handle the fetch operation
     const fetchStudent = async () => {
       try {
-        const response = await fetch(`/api/students/${params.id}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch student');
+        // Check if user is authenticated using AuthContext
+        if (!isAuthenticated || !user) {
+          console.error('User not authenticated');
+          setError('Authentication required. Please log in to continue.');
+          setLoading(false);
+          return;
         }
+        
+        // Use the user data from AuthContext
+        
+        // Include user data in the request header
+        const response = await fetch(`/api/students/${id}`, {
+          headers: {
+            'x-user-data': JSON.stringify({
+              academyId: user.academyId,
+              role: user.role
+            }),
+            'Cache-Control': 'no-store'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch student: ${response.status}`);
+        }
+        
         const data = await response.json();
         setStudent(data);
       } catch (err) {
+        console.error('Fetch error:', err);
         setError('Error loading student. Please try again later.');
-        console.error(err);
       } finally {
         setLoading(false);
       }
     };
 
-    if (params.id) {
+    // Only run on the client side
+    if (typeof window !== 'undefined' && id) {
       fetchStudent();
     }
-  }, [params.id]);
+  }, [id, user, isAuthenticated, authLoading]);
 
   if (loading) {
     return <div className="text-center py-4">Loading student...</div>;

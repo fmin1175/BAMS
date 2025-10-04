@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Coach } from '@/types/coach';
+import Cookies from 'js-cookie';
 
 export default function CoachDetailPage({ params }: { params: { id: string } }) {
   const [coach, setCoach] = useState<Coach | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -34,25 +36,52 @@ export default function CoachDetailPage({ params }: { params: { id: string } }) 
     fetchCoach();
   }, [params.id]);
 
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this coach?')) {
-      return;
-    }
-    
+  const handleDelete = () => {
+    setShowConfirmDialog(true);
+  };
+
+  const confirmDelete = async () => {
     try {
+      // Get auth token from cookies
+      const token = Cookies.get('auth_token');
+      
+      // Get user data from token
+      let userData = null;
+      if (token) {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        
+        userData = JSON.parse(jsonPayload);
+      }
+      
       const response = await fetch(`/api/coaches/${params.id}`, {
         method: 'DELETE',
+        headers: {
+          'x-user-data': userData ? JSON.stringify(userData) : ''
+        }
       });
       
       if (!response.ok) {
-        throw new Error('Failed to delete coach');
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.error || 'Failed to delete coach';
+        setError(errorMessage);
+        setShowConfirmDialog(false);
+        return;
       }
       
       router.push('/coaches');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error deleting coach:', err);
-      setError('Failed to delete coach. Please try again.');
+      setError(err.message || 'Failed to delete coach. Please try again.');
+      setShowConfirmDialog(false);
     }
+  };
+
+  const cancelDelete = () => {
+    setShowConfirmDialog(false);
   };
 
   if (loading) {
@@ -85,6 +114,27 @@ export default function CoachDetailPage({ params }: { params: { id: string } }) 
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+            <h3 className="text-lg font-medium mb-4">Are you sure you want to delete this coach?</h3>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={cancelDelete}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">{coach.name}</h1>
         <div className="space-x-2">
@@ -121,9 +171,39 @@ export default function CoachDetailPage({ params }: { params: { id: string } }) 
               <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{coach.name}</dd>
             </div>
             <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-              <dt className="text-sm font-medium text-gray-500">Hourly Rate</dt>
-              <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">${coach.hourlyRate.toFixed(2)}</dd>
+              <dt className="text-sm font-medium text-gray-500">Payment Frequency</dt>
+              <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                {coach.paymentFrequency === 'WEEKLY' ? 'Weekly' : 'Monthly'}
+              </dd>
             </div>
+            {coach.paymentFrequency === 'WEEKLY' && (
+              <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                <dt className="text-sm font-medium text-gray-500">Payment Type</dt>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                  {coach.paymentType === 'PER_SESSION' ? 'Per Session' : 'Hourly'}
+                </dd>
+              </div>
+            )}
+            {coach.paymentFrequency === 'WEEKLY' && (
+              <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                <dt className="text-sm font-medium text-gray-500">
+                  {coach.paymentType === 'PER_SESSION' ? 'Session Rate' : 'Hourly Rate'}
+                </dt>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                  ${coach.paymentType === 'PER_SESSION' ? 
+                    (coach.sessionRate?.toFixed(2) || '0.00') + ' per session' : 
+                    coach.hourlyRate.toFixed(2) + ' per hour'}
+                </dd>
+              </div>
+            )}
+            {coach.paymentFrequency === 'MONTHLY' && (
+              <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                <dt className="text-sm font-medium text-gray-500">Monthly Salary</dt>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                  ${coach.monthlySalary?.toFixed(2) || '0.00'} per month
+                </dd>
+              </div>
+            )}
             <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
               <dt className="text-sm font-medium text-gray-500">Payout Method</dt>
               <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{coach.payoutMethod.replace('_', ' ')}</dd>

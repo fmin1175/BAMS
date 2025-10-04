@@ -16,7 +16,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       where: { id },
       include: {
         coach: true,
-        court: true,
         students: {
           include: {
             student: true
@@ -56,10 +55,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const body = await request.json();
     
     // Validate required fields
-    const { name, coachId, courtId, dayOfWeek, startTime, endTime } = body;
-    if (!name || !coachId || !courtId || dayOfWeek === undefined || !startTime || !endTime) {
+    const { name, coachId, locationId, dayOfWeek, startTime, endTime } = body;
+    if (!name || !coachId || !locationId || dayOfWeek === undefined || !startTime || !endTime) {
       return NextResponse.json(
-        { error: 'Name, coach, court, day of week, start time, and end time are required' },
+        { error: 'Name, coach, location, day of week, start time, and end time are required' },
         { status: 400 }
       );
     }
@@ -112,41 +111,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       );
     }
 
-    // Check for court conflicts (excluding this class)
-    const courtConflicts = await prisma.class.findMany({
-      where: {
-        id: { not: id },
-        courtId: parseInt(courtId),
-        dayOfWeek: parseInt(dayOfWeek),
-        OR: [
-          {
-            AND: [
-              { startTime: { lte: parsedStartTime } },
-              { endTime: { gt: parsedStartTime } }
-            ]
-          },
-          {
-            AND: [
-              { startTime: { lt: parsedEndTime } },
-              { endTime: { gte: parsedEndTime } }
-            ]
-          },
-          {
-            AND: [
-              { startTime: { gte: parsedStartTime } },
-              { endTime: { lte: parsedEndTime } }
-            ]
-          }
-        ]
-      }
-    });
-
-    if (courtConflicts.length > 0) {
-      return NextResponse.json(
-        { error: 'Court is already booked during this time' },
-        { status: 409 }
-      );
-    }
+    // Location conflict check removed as per user request
 
     // Update the class if no conflicts
     const updatedClass = await prisma.class.update({
@@ -154,7 +119,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       data: {
         name,
         coachId: parseInt(coachId),
-        courtId: parseInt(courtId),
+        locationId: parseInt(locationId),
         dayOfWeek: parseInt(dayOfWeek),
         startTime: parsedStartTime,
         endTime: parsedEndTime,
@@ -162,9 +127,31 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       },
       include: {
         coach: true,
-        court: true,
+        location: true,
+        students: true
       }
     });
+
+    // Handle student enrollments if provided
+    if (body.studentIds && Array.isArray(body.studentIds)) {
+      // First, delete all existing enrollments for this class
+      await prisma.classEnrollment.deleteMany({
+        where: { classId: id }
+      });
+      
+      // Then create new enrollments for each student in the list
+      if (body.studentIds.length > 0) {
+        await Promise.all(body.studentIds.map(async (studentId: number) => {
+          await prisma.classEnrollment.create({
+            data: {
+              classId: id,
+              studentId: studentId,
+              joinedAt: new Date()
+            }
+          });
+        }));
+      }
+    }
 
     return NextResponse.json(updatedClass);
   } catch (error) {
@@ -179,6 +166,26 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 // DELETE /api/classes/[id] - Delete a class
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
+    // Get user data from headers for authentication
+    const userDataHeader = request.headers.get('x-user-data');
+    if (!userDataHeader) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Parse user data
+    let userData;
+    try {
+      userData = JSON.parse(userDataHeader);
+    } catch (e) {
+      return NextResponse.json(
+        { error: 'Invalid authentication data' },
+        { status: 400 }
+      );
+    }
+
     const id = parseInt(params.id);
     if (isNaN(id)) {
       return NextResponse.json(

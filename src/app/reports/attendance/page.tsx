@@ -25,82 +25,49 @@ interface ClassStats {
   totalSessions: number;
 }
 
+import ProtectedRoute from '@/components/ProtectedRoute';
+
 export default function AttendanceReportsPage() {
+  return (
+    <ProtectedRoute allowedRoles={['ACADEMY_ADMIN']}>
+      <AttendanceReportsContent />
+    </ProtectedRoute>
+  );
+}
+
+function AttendanceReportsContent() {
   const [selectedClass, setSelectedClass] = useState<string>('all');
   const [selectedPeriod, setSelectedPeriod] = useState<string>('month');
   const [studentStats, setStudentStats] = useState<AttendanceStats[]>([]);
   const [classStats, setClassStats] = useState<ClassStats[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Mock data - replace with actual API calls
+  // Fetch real attendance data from API
   useEffect(() => {
-    const mockStudentStats: AttendanceStats[] = [
-      {
-        studentId: 1,
-        studentName: 'John Doe',
-        totalSessions: 12,
-        presentCount: 10,
-        lateCount: 1,
-        absentCount: 1,
-        attendanceRate: 91.7
-      },
-      {
-        studentId: 2,
-        studentName: 'Jane Smith',
-        totalSessions: 12,
-        presentCount: 12,
-        lateCount: 0,
-        absentCount: 0,
-        attendanceRate: 100
-      },
-      {
-        studentId: 3,
-        studentName: 'Mike Johnson',
-        totalSessions: 12,
-        presentCount: 8,
-        lateCount: 2,
-        absentCount: 2,
-        attendanceRate: 83.3
-      },
-      {
-        studentId: 4,
-        studentName: 'Sarah Wilson',
-        totalSessions: 10,
-        presentCount: 9,
-        lateCount: 0,
-        absentCount: 1,
-        attendanceRate: 90
-      },
-      {
-        studentId: 5,
-        studentName: 'Tom Brown',
-        totalSessions: 10,
-        presentCount: 7,
-        lateCount: 1,
-        absentCount: 2,
-        attendanceRate: 80
+    const fetchAttendanceData = async () => {
+      setLoading(true);
+      try {
+        // Fetch student attendance stats
+        const studentResponse = await fetch(`/api/reports/attendance?type=student&classId=${selectedClass}&period=${selectedPeriod}`);
+        if (studentResponse.ok) {
+          const studentData = await studentResponse.json();
+          setStudentStats(studentData.data);
+        }
+        
+        // Fetch class attendance stats
+        const classResponse = await fetch(`/api/reports/attendance?type=class&classId=${selectedClass}&period=${selectedPeriod}`);
+        if (classResponse.ok) {
+          const classData = await classResponse.json();
+          setClassStats(classData.data);
+        }
+      } catch (error) {
+        console.error('Error fetching attendance data:', error);
+      } finally {
+        setLoading(false);
       }
-    ];
-
-    const mockClassStats: ClassStats[] = [
-      {
-        classId: 1,
-        className: 'U12 Beginners',
-        totalStudents: 3,
-        averageAttendanceRate: 91.7,
-        totalSessions: 12
-      },
-      {
-        classId: 2,
-        className: 'U16 Advanced',
-        totalStudents: 2,
-        averageAttendanceRate: 85,
-        totalSessions: 10
-      }
-    ];
-
-    setStudentStats(mockStudentStats);
-    setClassStats(mockClassStats);
+    };
+    
+    fetchAttendanceData();
   }, [selectedClass, selectedPeriod]);
 
   const getAttendanceColor = (rate: number) => {
@@ -150,7 +117,7 @@ export default function AttendanceReportsPage() {
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Select class" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white">
                     <SelectItem value="all">All Classes</SelectItem>
                     <SelectItem value="1">U12 Beginners</SelectItem>
                     <SelectItem value="2">U16 Advanced</SelectItem>
@@ -160,7 +127,7 @@ export default function AttendanceReportsPage() {
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Select period" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white">
                     <SelectItem value="week">This Week</SelectItem>
                     <SelectItem value="month">This Month</SelectItem>
                     <SelectItem value="quarter">This Quarter</SelectItem>

@@ -4,6 +4,7 @@ export interface Student {
   dateOfBirth: Date;
   guardianName: string;
   contactNumber: string;
+  monthlyFee: number;
   medicalNotes?: string;
   registrationDate: Date;
   createdAt?: Date;
@@ -18,5 +19,6 @@ export interface StudentFormData {
   dateOfBirth: string;
   guardianName: string;
   contactNumber: string;
+  monthlyFee: number;
   medicalNotes?: string;
 }

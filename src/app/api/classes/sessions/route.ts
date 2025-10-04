@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       
       return NextResponse.json({
         success: true,
-        message: `Generated ${result.generatedCount} class sessions`,
+        message: `Generated ${result.generatedCount} class sessions${result.skippedSessions?.length ? `, skipped ${result.skippedSessions.length} sessions with existing attendance` : ''}`,
         data: result
       });
     }
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
         class: {
           include: {
             coach: true,
-            court: true
+            location: true
           }
         },
         attendance: {

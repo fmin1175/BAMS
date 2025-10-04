@@ -6,7 +6,7 @@ import StudentForm from '@/components/StudentForm';
 import { Student } from '@/types/student';
 
 export default function EditPlayerPage() {
-  const params = useParams();
+  const { id } = useParams() as { id: string };
   const [player, setPlayer] = useState<Student | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -14,7 +14,7 @@ export default function EditPlayerPage() {
   useEffect(() => {
     const fetchPlayer = async () => {
       try {
-        const response = await fetch(`/api/players/${params.id}`);
+        const response = await fetch(`/api/players/${id}`);
         if (!response.ok) {
           throw new Error('Failed to fetch player');
         }
@@ -28,10 +28,10 @@ export default function EditPlayerPage() {
       }
     };
 
-    if (params.id) {
+    if (id) {
       fetchPlayer();
     }
-  }, [params.id]);
+  }, [id]);
 
   if (loading) {
     return <div className="text-center py-4">Loading player...</div>;

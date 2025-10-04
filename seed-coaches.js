@@ -25,13 +25,17 @@ async function main() {
     });
   }
 
-  // Create some initial coaches
+  // Create some initial coaches with different payment types and frequencies
   const coaches = [
     { 
       name: 'John Smith', 
       email: 'john.smith@example.com',
       contactNumber: '555-0101',
+      paymentType: 'HOURLY',
+      paymentFrequency: 'WEEKLY',
       hourlyRate: 50.0,
+      sessionRate: 0,
+      monthlySalary: 0,
       payoutMethod: 'bank_transfer',
       academyId: academy.id
     },
@@ -39,7 +43,11 @@ async function main() {
       name: 'Sarah Johnson', 
       email: 'sarah.johnson@example.com',
       contactNumber: '555-0102',
+      paymentType: 'HOURLY',
+      paymentFrequency: 'WEEKLY',
       hourlyRate: 45.0,
+      sessionRate: 0,
+      monthlySalary: 0,
       payoutMethod: 'bank_transfer',
       academyId: academy.id
     },
@@ -47,8 +55,36 @@ async function main() {
       name: 'Mike Davis', 
       email: 'mike.davis@example.com',
       contactNumber: '555-0103',
-      hourlyRate: 55.0,
+      paymentType: 'PER_SESSION',
+      paymentFrequency: 'WEEKLY',
+      sessionRate: 75.0,
+      hourlyRate: 0,
+      monthlySalary: 0,
       payoutMethod: 'check',
+      academyId: academy.id
+    },
+    { 
+      name: 'Lisa Wong', 
+      email: 'lisa.wong@example.com',
+      contactNumber: '555-0104',
+      paymentType: 'HOURLY',
+      paymentFrequency: 'MONTHLY',
+      hourlyRate: 0,
+      sessionRate: 0,
+      monthlySalary: 3500.0,
+      payoutMethod: 'bank_transfer',
+      academyId: academy.id
+    },
+    { 
+      name: 'David Chen', 
+      email: 'david.chen@example.com',
+      contactNumber: '555-0105',
+      paymentType: 'HOURLY',
+      paymentFrequency: 'MONTHLY',
+      hourlyRate: 0,
+      sessionRate: 0,
+      monthlySalary: 4200.0,
+      payoutMethod: 'bank_transfer',
       academyId: academy.id
     }
   ];

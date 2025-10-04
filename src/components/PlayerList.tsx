@@ -2,17 +2,26 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { ActionButton } from '@/components/ui/ActionButton';
 import { Student } from '@/types/student';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function PlayerList() {
   const [players, setPlayers] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchPlayers = async () => {
       try {
-        const response = await fetch('/api/players');
+        // Add academyId to API call if user is an ACADEMY_ADMIN
+        let url = '/api/players';
+        if (user && user.role === 'ACADEMY_ADMIN' && user.academyId) {
+          url = `/api/players?academyId=${user.academyId}`;
+        }
+        
+        const response = await fetch(url);
         if (!response.ok) {
           throw new Error('Failed to fetch players');
         }
@@ -27,7 +36,7 @@ export default function PlayerList() {
     };
 
     fetchPlayers();
-  }, []);
+  }, [user]);
 
   const handleDelete = async (id: number) => {
     if (confirm('Are you sure you want to delete this player?')) {
@@ -102,18 +111,14 @@ export default function PlayerList() {
                 <div className="text-sm text-gray-500">{player.contact}</div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <Link 
-                  href={`/players/${player.id}/edit`} 
-                  className="text-indigo-600 hover:text-indigo-900 mr-4"
-                >
-                  Edit
-                </Link>
-                <button
+                <ActionButton
+                  variant="edit"
+                  href={`/players/${player.id}/edit`}
+                />
+                <ActionButton
+                  variant="delete"
                   onClick={() => handleDelete(player.id)}
-                  className="text-red-600 hover:text-red-900"
-                >
-                  Delete
-                </button>
+                />
               </td>
             </tr>
           ))}

@@ -21,9 +21,18 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const success = await login(email, password);
-      if (success) {
-        router.push('/students'); // Redirect to students page after successful login
+      const userData = await login(email, password);
+      if (userData) {
+        // Redirect based on user role
+        if (userData.role === 'SYSTEM_ADMIN') {
+          router.push('/admin/trial-requests');
+        } else if (userData.role === 'ACADEMY_ADMIN') {
+          router.push('/settings');
+        } else if (userData.role === 'COACH') {
+          router.push('/attendance');
+        } else {
+          router.push('/'); // Default fallback
+        }
       } else {
         setError('Invalid email or password. Please try again.');
       }
@@ -43,6 +52,9 @@ export default function LoginPage() {
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Access your badminton academy management dashboard
+          </p>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Please enter your credentials to access the system
           </p>
         </div>
         
@@ -131,9 +143,9 @@ export default function LoginPage() {
           <div className="text-center space-y-2">
             <p className="text-sm text-gray-600">
               Don't have an academy account?{' '}
-              <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
+              <Link href="/#free-trial" className="font-medium text-blue-600 hover:text-blue-500">
                 Start your free trial
-              </a>
+              </Link>
             </p>
             
             <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">

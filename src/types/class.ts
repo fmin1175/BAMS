@@ -14,13 +14,23 @@ export interface CourtFormData {
   location?: string;
 }
 
+export interface Location {
+  id: number;
+  name: string;
+  address: string;
+  courts: number;
+  facilities?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export interface Class {
   id: number;
   name: string;
   coachId: number;
   coach?: Coach;
-  courtId: number;
-  court?: Court;
+  locationId: number;
+  location?: Location;
   dayOfWeek: number;
   startTime: Date;
   endTime: Date;
@@ -33,11 +43,12 @@ export interface Class {
 export interface ClassFormData {
   name: string;
   coachId: number;
-  courtId: number;
+  locationId: number;
   dayOfWeek: number;
   startTime: string;
   endTime: string;
   isRecurring: boolean;
+  studentIds?: number[];
 }
 
 export interface ClassEnrollment {

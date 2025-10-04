@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
                 }
               },
               coach: true,
-              court: true
+              location: true
             }
           },
           attendance: {
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
               }
             },
             coach: true,
-            court: true
+            location: true
           }
         });
 
@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
                   }
                 },
                 coach: true,
-                court: true
+                location: true
               }
             },
             attendance: {
@@ -137,7 +137,7 @@ export async function GET(request: NextRequest) {
                   }
                 },
                 coach: true,
-                court: true
+                location: true
               }
             },
             attendance: {
@@ -226,42 +226,55 @@ export async function POST(request: NextRequest) {
 
     // Process attendance records
     const attendancePromises = attendanceData.map(async (record: any) => {
-      const { studentId, status, remarks } = record;
+      const { studentId, enrollmentId, status, remarks } = record;
 
-      // Find the enrollment record
-      const enrollment = await prisma.classEnrollment.findFirst({
-        where: {
-          studentId: studentId,
-          classId: session.classId
-        }
-      });
-
-      if (!enrollment) {
-        throw new Error(`Enrollment not found for student ${studentId}`);
-      }
-
-      // Upsert attendance record
-      return prisma.attendance.upsert({
-        where: {
-          sessionId_enrollmentId: {
+      // If enrollmentId is provided, use it directly
+      if (enrollmentId !== 0) {
+        // Check if attendance record already exists
+        const existingRecord = await prisma.attendance.findFirst({
+          where: {
             sessionId: sessionId,
-            enrollmentId: enrollment.id
+            enrollmentId: enrollmentId
           }
-        },
-        update: {
-          status: status,
-          remarks: remarks || null,
-          markedBy: markedBy || 1, // Default to user ID 1 for now
-          updatedAt: new Date()
-        },
-        create: {
-          sessionId: sessionId,
-          enrollmentId: enrollment.id,
-          status: status,
-          remarks: remarks || null,
-          markedBy: markedBy || 1, // Default to user ID 1 for now
+        });
+
+        if (existingRecord) {
+          // Update existing record
+          return prisma.attendance.update({
+            where: { id: existingRecord.id },
+            data: {
+              status: status,
+              remarks: remarks || null,
+              markedBy: markedBy || 1,
+              updatedAt: new Date()
+            }
+          });
+        } else {
+          // Create new record
+          return prisma.attendance.create({
+            data: {
+              sessionId: sessionId,
+              enrollmentId: enrollmentId,
+              status: status,
+              remarks: remarks || null,
+              markedBy: markedBy || 1,
+            }
+          });
         }
-      });
+      } else {
+        // Handle ad-hoc student (enrollmentId = 0)
+        // For ad-hoc students, we need to create attendance without an enrollment relation
+        return prisma.attendance.create({
+          data: {
+            sessionId: sessionId,
+            status: status,
+            remarks: remarks || null,
+            markedBy: markedBy || 1,
+            studentId: studentId, // Store the studentId directly for ad-hoc students
+            enrollmentId: null // Explicitly set enrollmentId to null for ad-hoc students
+          }
+        });
+      }
     });
 
     const results = await Promise.all(attendancePromises);
@@ -287,7 +300,12 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error saving attendance:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    // Return detailed error information for debugging
+    return NextResponse.json({ 
+      error: 'Internal server error', 
+      details: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    }, { status: 500 });
   }
 }
 
