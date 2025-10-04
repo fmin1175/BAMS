@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendTrialRequestApprovalEmail } from '@/lib/email';
 import { generatePassword } from '@/lib/utils';
-import { hash } from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     // Generate a new plain text password
     const plainPassword = generatePassword(12);
     // Hash the password for database storage
-    const hashedPassword = await hash(plainPassword, 10);
+    const hashedPassword = bcrypt.hashSync(plainPassword, 10);
     
     // Create a new user with Academy Admin role
     const user = await prisma.user.create({

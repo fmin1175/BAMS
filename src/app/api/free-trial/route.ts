@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generatePassword } from '@/lib/utils';
-// Import bcrypt for password hashing
-import { hash } from 'bcrypt';
+// Use bcryptjs for serverless-compatible password hashing
+import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { sendTrialRequestConfirmation } from '@/lib/email';
 
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     // Generate a secure password
     const password = generatePassword(12);
     // Hash the password for security
-    const hashedPassword = await hash(password, 10);
+    const hashedPassword = bcrypt.hashSync(password, 10);
 
     try {
       // Save to database using Prisma

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { generatePassword } from '@/lib/utils';
-import { hash } from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 // GET /api/coaches - Get all coaches with optional search
 export async function GET(request: NextRequest) {
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     // Use academy's default coach password
     const password = academy.defaultCoachPassword;
     // Hash the password for security
-    const hashedPassword = await hash(password, 10);
+    const hashedPassword = bcrypt.hashSync(password, 10);
 
     // Safely parse numeric values
     let hourlyRate = 0;
