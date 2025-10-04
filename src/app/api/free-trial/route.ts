@@ -3,7 +3,7 @@ import { generatePassword } from '@/lib/utils';
 // Use bcryptjs for serverless-compatible password hashing
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
-import { sendTrialRequestConfirmation } from '@/lib/email';
+// Defer email utilities import to avoid any import-time errors in serverless
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,8 +38,8 @@ export async function POST(request: NextRequest) {
 
     // Generate a secure password
     const password = generatePassword(12);
-    // Hash the password for security
-    const hashedPassword = bcrypt.hashSync(password, 10);
+    // Hash the password asynchronously for serverless environments
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     try {
       // Save to database using Prisma
@@ -58,8 +58,9 @@ export async function POST(request: NextRequest) {
       
       console.log('Free trial request saved successfully to database');
 
-      // Send confirmation email to the requester
+      // Send confirmation email to the requester (import lazily inside handler)
       try {
+        const { sendTrialRequestConfirmation } = await import('@/lib/email');
         await sendTrialRequestConfirmation(email, name, academyName);
         console.log(`Confirmation email sent to ${email}`);
       } catch (emailError) {
@@ -87,6 +88,12 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error('Error processing free trial request:', error);
+    if (error && typeof error === 'object') {
+      try {
+        const err = error as any;
+        console.error('Error details:', { name: err.name, code: err.code, message: err.message });
+      } catch {}
+    }
     return NextResponse.json(
       { error: 'An error occurred while processing your request' },
       { status: 500 }
