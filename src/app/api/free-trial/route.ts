@@ -33,6 +33,8 @@ export async function POST(request: NextRequest) {
     }
     
     console.log('Request data:', { name, email, phone, academyName, studentsCount });
+    // Ensure studentsCount matches schema type (String)
+    const studentsCountStr = typeof studentsCount === 'string' ? studentsCount : String(studentsCount);
 
     // Generate a secure password
     const password = generatePassword(12);
@@ -47,7 +49,7 @@ export async function POST(request: NextRequest) {
           email,
           phone,
           academyName,
-          studentsCount,
+          studentsCount: studentsCountStr,
           status: 'pending',
           password: hashedPassword
           // The expiry date is automatically set by the database default
