@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const { hash } = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 // Allow passing DATABASE_URL via CLI arg for targeting specific environments
 // Usage: node create-system-admin.js "postgresql://..."
@@ -22,7 +22,7 @@ async function main() {
     console.log('Creating System Admin user...');
     
     // Hash the password
-    const hashedPassword = await hash(sysAdminPassword, 10);
+  const hashedPassword = bcrypt.hashSync(sysAdminPassword, 10);
     
     // Check if we need to create an academy for the system admin
     let academyId;
